@@ -6,5 +6,6 @@ window.FIREBASE_CONFIG = {
   appId: ""
 };
 // 2) Cloudflare Worker 주소 (예: https://sabot.내계정.workers.dev)
-window.WORKER_URL = "";
+window.WORKER_URL = "sabot.jksj1555.workers.dev
+";
 // 초대 코드는 여기에 적지 마세요. 접속할 때 화면에서 입력합니다.
