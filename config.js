@@ -1,0 +1,10 @@
+// 1) Firebase 콘솔 > 프로젝트 설정 > 내 앱(웹)에 나오는 값을 그대로 붙여 넣으세요
+window.FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  appId: ""
+};
+// 2) Cloudflare Worker 주소 (예: https://sabot.내계정.workers.dev)
+window.WORKER_URL = "";
+// 초대 코드는 여기에 적지 마세요. 접속할 때 화면에서 입력합니다.

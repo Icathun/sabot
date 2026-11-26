@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sabot Worlds Ranking</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+[hidden]{display:none!important}
+body{margin:0}
+img.champ{object-fit:cover;background:var(--soft)}
+.club img.champ{border:2px solid var(--c)}
+#gate{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-wrap:wrap;gap:8px}
+#gate p{flex-basis:100%;margin:0}
+#gate input{flex:1 1 200px}
+footer{font-size:11px;color:var(--mute);line-height:1.6;margin-top:24px}
+/* layout: navy search band, tabs, leader banner over a dense ranking table */
+:root{--bg:#eef0f5;--card:#fff;--soft:#f5f6fa;--fg:#161a2b;--mute:#6a718a;--line:#dde0ea;--accent:#4b4fd9;--on:#fff;--win:#3b6fe0;--loss:#de4b5f;--good:#0f8f73;--great:#2f66d8;--top:#c46a00;--danger:#c22f3f;--band:#171a33;--band2:#252a52;--bandfg:#f3f4ff;--bandmute:#a9aed3;--gold:#f2c14e;--font:'IBM Plex Sans KR',system-ui,sans-serif;--num:'Barlow Semi Condensed','IBM Plex Sans KR',sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101120;--card:#1a1c31;--soft:#212440;--fg:#eceefb;--mute:#9ca2c2;--line:#2d3052;--accent:#8589ff;--on:#0d0e20;--win:#5b8cff;--loss:#ff6b7d;--good:#38cda9;--great:#72a0ff;--top:#ffad45;--danger:#ff7886;--band:#191c3a;--band2:#2a2f60;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101120;--card:#1a1c31;--soft:#212440;--fg:#eceefb;--mute:#9ca2c2;--line:#2d3052;--accent:#8589ff;--on:#0d0e20;--win:#5b8cff;--loss:#ff6b7d;--good:#38cda9;--great:#72a0ff;--top:#ffad45;--danger:#ff7886;--band:#191c3a;--band2:#2a2f60;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);padding-bottom:40px}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band{background:linear-gradient(135deg,var(--band),var(--band2));color:var(--bandfg);padding-block:28px 22px;margin-top:calc(-1 * env(safe-area-inset-top,0px));padding-top:calc(env(safe-area-inset-top,0px) + 28px)}
+h1{margin:0;font:800 clamp(30px,7vw,46px)/1.05 var(--num)}
+.band p{margin:6px 0 18px;color:var(--bandmute);font-size:14px;line-height:1.6}
+input,select,button{font:inherit;font-size:16px;border-radius:6px;border:1px solid var(--line);padding:9px 12px;background:var(--card);color:var(--fg);min-width:0}
+button{cursor:pointer;font-weight:600}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.search{display:flex;flex-wrap:wrap;gap:8px}
+.search>input{flex:1 1 240px;height:48px}
+details{flex-basis:100%}
+summary{cursor:pointer;font-size:13px;color:var(--bandmute)}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:10px}
+label{grid-column:span 2;display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--bandmute)}
+.actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+#msg{flex-basis:100%;font-size:14px;color:var(--gold)}
+main{display:flex;flex-direction:column;gap:14px;padding-block:14px 0}
+nav{display:flex;gap:4px;align-items:center;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;border-bottom:3px solid transparent;border-radius:0;color:var(--mute);padding:10px 12px}
+nav button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+#all{margin-left:auto;border:1px solid var(--line);border-radius:6px;font-size:13px;padding:6px 10px;color:var(--fg);margin-bottom:4px}
+#status{margin:0;font-size:13px;color:var(--mute)}
+ol,ul{list-style:none;margin:0;padding:0}
+#list{display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:34px minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,1fr) auto;grid-template-areas:"no who tier rate kda btn" "tools tools tools tools tools tools";gap:8px 12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.row.club{border:2px solid var(--c);background:color-mix(in srgb,var(--c) 13%,var(--card))}
+.row.lead{padding-block:20px;box-shadow:inset 0 3px 0 var(--gold)}
+.no{grid-area:no;font:800 22px var(--num);text-align:center}
+.lead .no{font-size:36px;color:var(--top)}
+.who{grid-area:who;display:flex;gap:10px;align-items:center;min-width:0}
+.who>div{min-width:0}
+.champ{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;background:hsl(var(--h,230) 40% 40%)}
+.lead .champ{width:64px;height:64px;font-size:19px}
+.club .champ{background:var(--c);color:var(--ct)}
+.name{display:block;font-weight:700;color:var(--fg);overflow-wrap:anywhere;text-decoration:none;line-height:1.35}
+.name:hover{text-decoration:underline}
+.lead .name{font-size:20px}
+.chip{display:inline-block;font:800 13px var(--num);padding:0 6px;border-radius:4px;margin-right:6px;background:var(--c);color:var(--ct)}
+.tag,.sub{font-size:12px;color:var(--mute);font-weight:400}
+.tier{grid-area:tier;display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px;min-width:0}
+.gem{flex:none;width:28px;height:32px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,color-mix(in srgb,var(--t) 60%,#fff),var(--t) 55%,color-mix(in srgb,var(--t) 65%,#000));display:grid;place-items:center;color:#fff;font:800 14px var(--num);text-shadow:0 1px 2px #0009}
+.rate{grid-area:rate;min-width:0}
+.bar{height:7px;border-radius:4px;overflow:hidden;background:var(--loss);margin-bottom:4px}
+.bar i{display:block;height:100%;background:var(--win)}
+.rate.none .bar{background:var(--line)}
+.kda{grid-area:kda;min-width:0}
+.kda b{font:800 19px var(--num);color:var(--mute)}
+.kda b.good{color:var(--good)}.kda b.great{color:var(--great)}.kda b.top{color:var(--top)}
+.sub{font-variant-numeric:tabular-nums}
+.more{grid-area:btn;font-size:12px;padding:4px 10px}
+.tools{grid-area:tools;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center}
+.tools button{font-size:12px;padding:5px 12px}
+.empty{text-align:center;padding:36px 16px;color:var(--mute);background:var(--card);border:1px dashed var(--line);border-radius:8px}
+section{display:flex;flex-direction:column;gap:12px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pills button{font-size:13px;padding:6px 14px;border-radius:99px}
+.pills button[aria-pressed="true"]{background:var(--fg);color:var(--card);border-color:var(--fg)}
+#teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.team{background:color-mix(in srgb,var(--c) 13%,var(--card));border:2px solid var(--c);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.team .chip{font-size:16px;margin:0}
+.team button{font-size:12px;padding:3px 10px}
+.box{display:flex;flex-wrap:wrap;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.box input,.box select{flex:1 1 160px;background:var(--soft)}
+#cmsg{margin:0;font-size:14px;font-weight:600;color:var(--danger);background:var(--card);border:2px solid var(--danger);border-radius:8px;padding:10px 12px}
+#log li{background:var(--card);border-bottom:1px solid var(--line);padding:10px 12px;font-size:14px;overflow-wrap:anywhere}
+@media (max-width:700px){
+  .row{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"no who who tier" "no rate kda btn" "tools tools tools tools"}
+  .lead .champ{width:52px;height:52px}.lead .name{font-size:17px}
+}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap">
+<h1>Sabot Worlds Ranking</h1><p>OP.GG 링크 하나로 솔로 랭크 티어, 승패, KDA, 모스트 챔피언까지.</p>
+<form id="f" class="search" novalidate>
+<input id="link" autocomplete="off" aria-label="OP.GG 링크 또는 닉네임#태그" placeholder="OP.GG 링크 또는 닉네임#태그">
+<button class="primary" id="save" value="auto" disabled>자동으로 추가</button>
+<button type="button" id="cancel" hidden>취소</button>
+<details id="manual"><summary>직접 입력하기</summary><div class="grid">
+<label>티어<select id="tier"></select></label>
+<label>단계<select id="div"><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+<label>LP<input id="lp" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+<label style="grid-column:span 3">승<input id="win" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+<label style="grid-column:span 3">패<input id="loss" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+<div class="actions"><button id="savem" value="manual" disabled>직접 입력한 값 저장</button></div></div></details>
+<div id="msg" role="alert" hidden></div>
+</form>
+</div></header>
+<main class="wrap">
+<nav role="tablist"><button role="tab" data-tab="rank" aria-selected="true">랭킹</button><button role="tab" data-tab="club" aria-selected="false">팀</button><button role="tab" data-tab="move" aria-selected="false">이적 시장</button><button type="button" id="all" hidden>전체 새로고침</button></nav>
+<form id="gate" hidden><p>친구에게 받은 초대 코드를 입력하세요.</p><input id="code" type="password" autocomplete="off" aria-label="초대 코드"><button class="primary">입장</button></form>
+<p id="cmsg" role="alert" hidden></p>
+<p id="status">순위표를 불러오는 중이에요.</p>
+<section id="rank"><ol id="list"><li class="empty">아직 등록된 선수가 없어요. 위에 OP.GG 링크를 넣어 첫 선수를 추가하세요.</li></ol></section>
+<section id="club" hidden>
+<div class="pills" id="leagues"></div>
+<div id="teams"></div>
+<form id="tf" class="box"><input id="tname" maxlength="12" placeholder="새 팀 이름" aria-label="새 팀 이름"><select id="tcolor" aria-label="팀 색깔"></select><button class="primary">팀 만들기</button></form>
+</section>
+<section id="move" hidden>
+<form id="mf" class="box"><select id="mp" aria-label="선수"></select><select id="mt" aria-label="옮길 팀"></select><button class="primary">이적 발표</button></form>
+<ul id="log"></ul>
+</section>
+<footer><label id="importbox" hidden style="color:inherit">기존 데이터 가져오기 (data.json) <input id="import" type="file" accept=".json"></label>
+<button type="button" id="leave" hidden>초대 코드 다시 입력</button>
+<p>Sabot Worlds Ranking is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</p></footer>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script>
+const TIERS=[["UNRANKED","언랭크","#8a90a0"],["IRON","아이언","#7a6a63"],["BRONZE","브론즈","#a8714a"],["SILVER","실버","#8fa3b0"],["GOLD","골드","#d6a531"],["PLATINUM","플래티넘","#2fa7a0"],["EMERALD","에메랄드","#22a566"],["DIAMOND","다이아몬드","#5b7fe8"],["MASTER","마스터","#9b55d3"],["GRANDMASTER","그랜드마스터","#d94452"],["CHALLENGER","챌린저","#e5b94e"]];
+const $=id=>document.getElementById(id);
+function parse(s){
+  s=s.trim(); if(!s) return null;
+  let region="kr",name,tag;
+  try{
+    if(/op\.gg\//i.test(s)){
+      const u=new URL(/^https?:\/\//i.test(s)?s:"https://"+s);
+      if(!/(^|\.)op\.gg$/i.test(u.hostname)) return null;
+      const p=u.pathname.split("/").filter(Boolean), i=p.indexOf("summoners");
+      if(i<0||!p[i+2]) return null;
+      region=p[i+1].toLowerCase();
+      const id=decodeURIComponent(p[i+2]), k=id.lastIndexOf("-");
+      name=k>0?id.slice(0,k):id; tag=k>0?id.slice(k+1):region.toUpperCase();
+    }else{
+      const m=s.match(/^([^#\/]+)#([^#\/\s]+)$/); if(!m) return null;
+      name=m[1]; tag=m[2];
+    }
+  }catch(e){return null}
+  name=name.trim(); if(!name||!/^[a-z]+$/.test(region)) return null;
+  return {region,name,tag};
+}
+const hasDiv=t=>t>=1&&t<=7;
+// Master 이상은 같은 LP 사다리라 티어 순 다음 LP 순
+const score=p=>p.tier*1e7+(hasDiv(p.tier)?(5-p.div)*1e5:0)+p.lp;
+const keyOf=p=>{let h1=2166136261,h2=5381;for(const c of (p.region+"|"+p.name+"|"+p.tag).toLowerCase().replace(/\s/g,"")){const n=c.codePointAt(0);h1=Math.imul(h1^n,16777619);h2=Math.imul(h2,33)^n}return "p"+(h1>>>0).toString(36)+(h2>>>0).toString(36)};
+const hue=t=>[...t].reduce((h,c)=>(h*31+c.codePointAt(0))%360,7);
+// [색 이름, 배경색, 그 위의 글자색]
+const COLORS={red:["빨강","#e0202f","#fff"],orange:["주황","#f47a12","#111"],yellow:["노랑","#e8bd00","#111"],green:["초록","#17924f","#fff"],teal:["청록","#0e9f9a","#111"],blue:["파랑","#2563d9","#fff"],purple:["보라","#8247c9","#fff"],pink:["분홍","#e0569b","#111"],gray:["회색","#8b9099","#111"],black:["검정","#30333b","#fff"]};
+const KNOWN=[[/^(t1|티원|skt)/,"red"],[/^(geng|gen\.g|젠지)/,"yellow"],[/^(hle|한화|hanwha)/,"orange"],[/^(edg|edward)/,"gray"],[/^(dk|dplus|디플러스|담원)/,"teal"],[/^(kt|케이티)/,"black"]];
+// [코드, 한글 이름, 색]  2026 시즌 기준
+const LEAGUES={
+LCK:[["T1","티원","#e2012d"],["GEN","젠지","#f2c200"],["HLE","한화생명","#f57c0a"],["DK","디플러스 기아","#12b5a8"],["KT","KT 롤스터","#23252b"],["NS","농심 레드포스","#a50f1a"],["DNS","DN 수퍼스","#1c5fd0"],["BRO","한진 브리온","#0d6b45"],["BFX","BNK 피어엑스","#ffdc3d"],["KRX","키움 DRX","#4a3fd1"]],
+LPL:[["AL","Anyone's Legend","#8e1530"],["BLG","Bilibili Gaming","#35b7e8"],["WBG","Weibo Gaming","#ff5a4d"],["JDG","JD Gaming","#c4001a"],["TES","Top Esports","#ff9d3b"],["IG","Invictus Gaming","#d9dde5"],["NIP","Ninjas in Pyjamas","#c8e62b"],["WE","Team WE","#e84a6f"],["EDG","EDward Gaming","#8b9099"],["TT","TT Gaming","#7b2fbe"],["LNG","LNG Esports","#1e8fd6"],["OMG","Oh My God","#5b616e"],["LGD","LGD Gaming","#b9c0cc"],["UP","Ultra Prime","#b06ee8"]],
+LEC:[["KC","Karmine Corp","#00a3ff"],["NAVI","Natus Vincere","#ffee70"],["VIT","Team Vitality","#d9a900"],["TH","Team Heretics","#c99a4b"],["GX","GIANTX","#5a2fe0"],["MKOI","Movistar KOI","#7ec8ff"],["G2","G2 Esports","#40434c"],["FNC","Fnatic","#ff6a13"],["SHFT","Shifters","#e43f98"],["SK","SK Gaming","#d4d4d4"]],
+LCS:[["C9","Cloud9","#6fd3ff"],["LYON","LYON","#d4af6a"],["TL","Team Liquid","#0c2f5e"],["FLY","FlyQuest","#0f7a4d"],["SEN","Sentinels","#ff3355"],["SR","Shopify Rebellion","#9be15d"],["DSG","Disguised","#f6e7b0"],["DIG","Dignitas","#ffb81c"]]};
+const ink=h=>{const n=parseInt(h.slice(1),16);return (n>>16)*.299+((n>>8)&255)*.587+(n&255)*.114>140?"#111":"#fff"};
+const slim=x=>x.replace(/[\s.]/g,"").toLowerCase();
+const PRESETS=Object.entries(LEAGUES).flatMap(([league,list])=>list.map(([name,full,hex])=>({id:league+"-"+name,league,name,full,hex})));
+const presetFor=name=>PRESETS.find(p=>slim(p.name)===slim(name)||slim(p.full)===slim(name));
+function colorOf(t){
+  if(t.hex)return [t.name,t.hex,ink(t.hex)];
+  if(Object.hasOwn(COLORS,t.color))return COLORS[t.color];
+  const n=t.name.replace(/\s/g,"").toLowerCase(),hit=KNOWN.find(x=>x[0].test(n));
+  const keys=Object.keys(COLORS);return COLORS[hit?hit[1]:keys[hue(n)%keys.length]];
+}
+function paint(e,t){if(!t)return;const c=colorOf(t);e.classList.add("club");e.style.setProperty("--c",c[1]);e.style.setProperty("--ct",c[2])}
+$("tcolor").add(new Option("색 자동",""));for(const[k,v]of Object.entries(COLORS))$("tcolor").add(new Option(v[0],k));
+const url=p=>"https://op.gg/lol/summoners/"+encodeURIComponent(p.region)+"/"+encodeURIComponent(p.name+"-"+p.tag);
+const int=v=>Math.max(0,Math.min(99999,Math.floor(Number(v)||0)));
+const dec=v=>Math.max(0,Math.min(999,Number(v)||0));
+const int0=v=>Math.max(0,Number(v)||0);
+let mcp=false,code="";
+const store={get(){try{return localStorage.getItem("sabot-code")||""}catch(e){return ""}},set(v){try{v?localStorage.setItem("sabot-code",v):localStorage.removeItem("sabot-code")}catch(e){}}};
+async function lookup(who){
+  const u=new URL(window.WORKER_URL);u.search=new URLSearchParams({region:who.region,name:who.name,tag:who.tag});
+  const r=await fetch(u,{headers:{"X-Room-Code":code}});
+  const o=await r.json().catch(()=>({}));
+  if(!r.ok)throw {code:o.error||"riot"};
+  return clean({...who,...o,at:Date.now()});
+}
+function why(x){
+  const m={code:"서버의 초대 코드가 달라요. Worker의 ROOM_CODE를 확인하세요.",notfound:"선수를 찾지 못했어요. 닉네임, 태그, 지역을 확인하세요.",limit:"조회 한도를 넘었어요. 2분 뒤에 다시 시도하세요.",key:"라이엇 API 키가 만료됐거나 잘못됐어요.",input:"지원하지 않는 지역이거나 입력이 잘못됐어요.","permission-denied":"저장 권한이 없어요. 초대 코드를 확인하세요."};
+  return (x&&m[x.code])||"전적을 가져오거나 저장하지 못했어요. 잠시 후 다시 시도하세요.";
+}
+// 챔피언 아이콘과 한글 이름 (라이엇 Data Dragon)
+let champs={};
+async function loadChamps(){
+  try{
+    const base="https://ddragon.leagueoflegends.com";
+    const ver=(await (await fetch(base+"/api/versions.json")).json())[0];
+    const list=(await (await fetch(`${base}/cdn/${ver}/data/ko_KR/champion.json`)).json()).data;
+    for(const c of Object.values(list)){const v={name:c.name,img:`${base}/cdn/${ver}/img/champion/${c.id}.png`};champs[c.id.toLowerCase()]=v;champs[c.name]=v}
+    if(col)render();
+  }catch(e){}
+}
+const champOf=n=>champs[n]||champs[String(n).toLowerCase()];
+// Firestore를 순위표가 쓰는 형태로 감싸기
+function makeDb(fs,room){
+  const ref=p=>fs.collection("rooms").doc(room).collection(p);
+  return {
+    collection:name=>{
+      const snap=s=>({docs:s.docs.map(d=>({id:d.id,data:()=>d.data()})),metadata:{fromCache:s.metadata.fromCache}});
+      return {
+        onSnapshot:(ok,bad)=>ref(name).onSnapshot({includeMetadataChanges:true},s=>ok(snap(s)),bad),
+        get:async()=>snap(await ref(name).get({source:"server"})),
+        add:v=>ref(name).add(v),
+        doc:id=>({set:v=>ref(name).doc(id).set(v),update:v=>ref(name).doc(id).update(v),delete:()=>ref(name).doc(id).delete()})
+      };
+    },
+    doc:path=>{const [c,id]=path.split("/");return {acquire:({holder,ttlMs})=>fs.runTransaction(async t=>{
+      const r=ref(c).doc(id),s=await t.get(r),v=s.exists?s.data():null;
+      if(v&&v.holder!==holder&&v.until>Date.now())return {acquired:false};
+      t.set(r,{holder,until:Date.now()+ttlMs});return {acquired:true};
+    })}}
+  };
+}
+const clean=d=>({champ:String(d.champ||"").slice(0,30),team:String(d.team||""),k:dec(d.k),d:dec(d.d),a:dec(d.a),games:int(d.games),at:int0(d.at),region:/^[a-z]+$/.test(d.region)?d.region:"kr",name:String(d.name||""),tag:String(d.tag||""),tier:Math.min(10,int(d.tier)),div:Math.min(4,Math.max(1,int(d.div))),lp:int(d.lp),win:int(d.win),loss:int(d.loss)});
+let db=null,league="LCK",open=null,custom=[],col=null,tcol=null,lcol=null,teams=[...PRESETS],logs=[],armedTeam=null,players=[],editing=null,armed=null,readonly=false,busy=false;
+TIERS.forEach((t,i)=>$("tier").add(new Option(t[1],i)));
+function syncFields(){const t=+$("tier").value;$("div").disabled=!hasDiv(t);$("lp").disabled=t===0}
+$("tier").onchange=syncFields; syncFields();
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+// 직접 만든 팀 이름이 리그 팀과 같으면 리그 팀으로 합침
+const teamOf=id=>{const c=custom.find(t=>t.id===id);return (c&&presetFor(c.name))||teams.find(t=>t.id===id)};
+const teamName=id=>(teamOf(id)||{}).name||"";
+const full=p=>(teamName(p.team)?teamName(p.team)+" ":"")+p.name;
+// 팀당 한 명. 무소속(FA)은 제한 없음
+const holderOf=(teamId,list,except)=>teamId?list.find(p=>p.id!==except&&(teamOf(p.team)||{}).id===teamId):null;
+const me=Math.random().toString(36).slice(2);
+function csay(t){$("cmsg").textContent=t;$("cmsg").hidden=!t}
+function renderSelects(){
+  const mp=$("mp"),mt=$("mt"),a=mp.value,b=mt.value;mp.textContent=mt.textContent="";
+  for(const p of players)mp.add(new Option(full(p),p.id));
+  mt.add(new Option("무소속(FA)",""));
+  for(const g of [...Object.keys(LEAGUES),"직접 만든 팀"]){
+    const items=teams.filter(t=>(t.league||"직접 만든 팀")===g);if(!items.length)continue;
+    const og=document.createElement("optgroup");og.label=g;for(const t of items){const h=holderOf(t.id,players);og.append(new Option((t.full?`${t.name} · ${t.full}`:t.name)+(h?` (마감: ${h.name})`:""),t.id))}mt.append(og);
+  }
+  if(players.some(p=>p.id===a))mp.value=a;if(teams.some(t=>t.id===b))mt.value=b;
+}
+function renderClub(){
+  $("tf").hidden=!col||readonly||league!=="직접";$("mf").hidden=!col||readonly;
+  const pills=$("leagues");pills.textContent="";
+  for(const g of [...Object.keys(LEAGUES),"직접"]){const b=el("button",null,g==="직접"?"직접 만든 팀":g);b.type="button";b.setAttribute("aria-pressed",g===league);b.onclick=()=>{league=g;renderClub()};pills.append(b)}
+  const box=$("teams");box.textContent="";
+  const items=teams.filter(t=>(t.league||"직접")===league);
+  if(!items.length)box.append(el("p","sub","직접 만든 팀이 없어요."));
+  for(const t of items){
+    const card=el("div","team"),m=players.filter(p=>(teamOf(p.team)||{}).id===t.id);paint(card,t);
+    card.append(el("span","chip",t.name));if(t.full)card.append(el("div","sub",t.full));
+    card.append(el("div",m.length?null:"sub",m.length?m.map(p=>p.name).join(", "):"영입 가능"));
+    if(!readonly&&!t.league){const b=el("button",null,armedTeam===t.id?"한 번 더 누르면 해체":"해체");b.type="button";b.disabled=busy;
+      b.onclick=async()=>{if(armedTeam!==t.id){armedTeam=t.id;renderClub();return}armedTeam=null;try{await tcol.doc(t.id).delete();csay("")}catch(x){csay(why(x))}};card.append(b)}
+    box.append(card);
+  }
+  renderSelects();
+  $("mf").querySelector("button").disabled=busy||!players.length;
+  const log=$("log");log.textContent="";
+  if(!logs.length)log.append(el("li","sub","아직 이적 기록이 없어요."));
+  for(const l of [...logs].sort((a,b)=>b.at-a.at).slice(0,20))
+    log.append(el("li",null,`${new Date(l.at).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric"})}  ${l.name}: ${l.from||"FA"} → ${l.to||"FA"}`));
+}
+function render(){
+  renderClub();
+  const list=$("list");list.textContent="";
+  $("all").hidden=readonly||!mcp||!players.length;$("all").disabled=busy;
+  if(!players.length){list.append(el("li","empty","아직 등록된 선수가 없어요. 위에 OP.GG 링크를 넣어 첫 선수를 추가하세요."));return}
+  const sorted=[...players].sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
+  let rank=0,prev=null;
+  sorted.forEach((p,i)=>{
+    const s=score(p);if(s!==prev){rank=i+1;prev=s}
+    const li=el("li",rank===1?"row lead":"row"),team=teamOf(p.team);paint(li,team);
+    const c=champOf(p.champ),cname=c?c.name:p.champ;
+    const face=el(c?"img":"div","champ",c?null:(p.champ?p.champ.slice(0,2):"?"));if(c){face.src=c.img;face.alt=cname}face.style.setProperty("--h",hue(p.champ));face.title=cname||"챔피언 정보 없음";
+    const info=el("div"),a=el("a","name");a.href=url(p);a.target="_blank";a.rel="noopener";
+    if(team)a.append(el("span","chip",team.name));a.append(p.name+" ",el("span","tag","#"+p.tag));
+    info.append(a,el("div","sub",p.champ?"모스트 "+cname:"모스트 정보 없음"));
+    if(p.at)info.append(el("div","sub",new Date(p.at).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})+" 갱신"));
+    const who=el("div","who");who.append(face,info);
+    const tier=el("div","tier"),gem=el("div","gem",hasDiv(p.tier)?p.div:"");gem.style.setProperty("--t",TIERS[p.tier][2]);gem.setAttribute("aria-hidden","true");
+    const tx=el("div",null,TIERS[p.tier][1]+(hasDiv(p.tier)?" "+p.div:""));if(p.tier)tx.append(el("div","sub",p.lp+" LP"));tier.append(gem,tx);
+    const g=p.win+p.loss,rate=el("div",g?"rate":"rate none"),bar=el("div","bar"),fill=el("i");fill.style.width=(g?p.win/g*100:0)+"%";bar.append(fill);
+    rate.append(bar,el("div","sub",g?`${Math.round(p.win/g*100)}%  ${p.win}승 ${p.loss}패`:"랭크 전적 없음"));
+    const kda=el("div","kda"),v=p.d?(p.k+p.a)/p.d:Infinity;
+    if(p.games){kda.append(el("b",v>=5?"top":v>=4?"great":v>=3?"good":"",p.d?v.toFixed(2):"Perfect"),el("span","sub"," KDA"),el("div","sub",`${p.k} / ${p.d} / ${p.a} (${p.games}경기)`))}
+    else kda.append(el("div","sub","KDA 없음"));
+    li.append(el("div","no",rank),who,tier,rate,kda);
+    if(!readonly){
+      const more=el("button","more",open===p.id?"닫기":"관리");more.type="button";more.setAttribute("aria-expanded",open===p.id);more.onclick=()=>{open=open===p.id?null:p.id;armed=null;render()};li.append(more);
+      if(open===p.id){
+        const tools=el("div","tools"),e=el("button",null,"수정"),d=el("button",null,armed===p.id?"한 번 더 누르면 삭제":"삭제");
+        e.type=d.type="button";
+        e.onclick=()=>edit(p);
+        d.onclick=async()=>{if(armed!==p.id){armed=p.id;render();return}armed=null;try{await col.doc(p.id).delete();if(editing===p.id)reset()}catch(x){fail(x)}};
+        if(mcp){const r=el("button",null,"새로고침");r.type="button";r.disabled=busy;r.onclick=()=>refresh([p]);tools.append(r)}
+        const m=el("button",null,"이적");m.type="button";m.onclick=()=>{show("move");$("mp").value=p.id};
+        tools.append(m,e,d);li.append(tools);
+      }
+    }
+    list.append(li);
+  });
+}
+function show(tab){for(const b of document.querySelectorAll("[data-tab]")){const on=b.dataset.tab===tab;b.setAttribute("aria-selected",on);$(b.dataset.tab).hidden=!on}csay("")}
+for(const b of document.querySelectorAll("[data-tab]"))b.onclick=()=>show(b.dataset.tab);
+function edit(p){editing=p.id;$("manual").open=true;$("link").value=url(p);for(const k of["tier","div","lp","win","loss"])$(k).value=p[k];syncFields();$("savem").textContent="수정한 값 저장";$("cancel").hidden=false;$("msg").hidden=true;$("f").scrollIntoView({block:"start"})}
+function reset(){editing=null;$("f").reset();syncFields();$("savem").textContent="직접 입력한 값 저장";$("manual").open=false;$("cancel").hidden=true;$("msg").hidden=true}
+function say(t){$("msg").textContent=t;$("msg").hidden=false}
+function fail(x){if(x&&x.code==="invalid_argument"){say("보기 권한만 있어서 저장할 수 없어요. 만든 사람에게 편집 권한을 요청하세요.")}else say("저장하지 못했어요. 잠시 후 다시 시도하세요.")}
+$("cancel").onclick=reset;
+$("tf").onsubmit=async ev=>{
+  ev.preventDefault();const name=$("tname").value.trim();if(!tcol||!name)return;
+  if(presetFor(name)||teams.some(t=>t.name.toLowerCase()===name.toLowerCase())){csay("이미 있는 팀이에요.");return}
+  try{await tcol.add({name,color:$("tcolor").value});$("tname").value="";$("tcolor").value="";csay("")}catch(x){csay(why(x))}
+};
+$("mf").onsubmit=async ev=>{
+  ev.preventDefault();if(busy)return;
+  const p=players.find(x=>x.id===$("mp").value),to=$("mt").value;if(!p)return;
+  const from=teamName(p.team),dest=teamName(to);csay("");
+  if(from===dest){csay("이미 그 소속이에요.");return}
+  lock(true);
+  try{
+    // 동시에 영입해도 한 명만 들어가도록 자리를 잠깐 잠그고 최신 명단을 다시 확인
+    let taken=null,wait=false;
+    if(to){
+      wait=!(await db.doc("slots/"+to.replace(/[^\w-]/g,"")).acquire({holder:me,ttlMs:5000})).acquired;
+      if(!wait){const fresh=(await col.get()).docs.map(d=>({id:d.id,...clean(d.data())}));taken=holderOf(to,fresh,p.id)}
+    }
+    if(wait)csay("다른 사람이 이 팀에 영입 중이에요. 잠시 후 다시 시도하세요.");
+    else if(taken)csay(`영입 실패! ${dest}에는 이미 ${taken.name} 선수가 있어요. 팀당 1명만 들어갈 수 있어요.`);
+    else{await col.doc(p.id).update({team:to});await lcol.add({name:p.name,from,to:dest,at:Date.now()})}
+  }catch(x){csay(why(x))}
+  lock(false);
+};
+function lock(v){busy=v;$("save").disabled=v||!col||!mcp;$("savem").disabled=v||!col;render()}
+async function refresh(list){
+  if(busy)return;lock(true);let failed=null;
+  for(const p of list){
+    $("status").hidden=false;$("status").textContent=p.name+" 전적을 가져오는 중이에요.";
+    try{const n=await lookup(p),cur=players.find(x=>x.id===p.id);if(cur)await col.doc(p.id).set({...n,team:cur.team})}catch(x){failed=p.name+": "+why(x)}
+  }
+  $("status").hidden=!failed;$("status").textContent=failed||"";lock(false);
+}
+$("all").onclick=()=>refresh([...players]);
+renderClub();
+$("f").onsubmit=async ev=>{
+  ev.preventDefault();if(!col||busy)return;
+  const manual=$("manual").open&&!!ev.submitter&&ev.submitter.value==="manual";
+  const who=parse($("link").value);
+  if(!who){say("OP.GG 프로필 링크나 닉네임#태그 형식으로 입력하세요.");return}
+  if(!manual&&!mcp){say("여기서는 자동 조회를 쓸 수 없어요. 직접 입력해 주세요.");return}
+  const id=keyOf(who),old=editing;$("msg").hidden=true;lock(true);
+  try{
+    let p;
+    if(manual){
+      p=clean({...who,tier:$("tier").value,div:$("div").value,lp:$("lp").value,win:$("win").value,loss:$("loss").value});
+      if(!hasDiv(p.tier))p.div=1; if(p.tier===0)p.lp=0;
+    }else{$("save").textContent="가져오는 중";p=await lookup(who)}
+    const prev=players.find(x=>x.id===(old||id));
+    if(prev){p.team=prev.team;if(manual)p.champ=prev.champ}
+    await col.doc(id).set(p);if(old&&old!==id)await col.doc(old).delete();reset();
+  }catch(x){say(why(x))}
+  $("save").textContent="자동으로 추가";lock(false);
+};
+function start(){
+  const cfg=window.FIREBASE_CONFIG||{};
+  if(!cfg.projectId){$("status").textContent="config.js에 Firebase 설정을 입력하세요.";return}
+  code=store.get();
+  if(!/^[A-Za-z0-9_-]{12,}$/.test(code)){store.set("");$("gate").hidden=false;$("status").hidden=true;$("f").hidden=true;return}
+  $("leave").hidden=false;
+  firebase.initializeApp(cfg);db=makeDb(firebase.firestore(),code);mcp=!!window.WORKER_URL;
+  col=db.collection("players");tcol=db.collection("teams");lcol=db.collection("transfers");
+  const denied=e=>{$("status").hidden=false;$("status").textContent=e&&e.code==="permission-denied"?"초대 코드가 달라요. 아래 버튼으로 다시 입력하세요.":"순위표를 불러오지 못했어요."};
+  tcol.onSnapshot(s=>{custom=s.docs.map(d=>({id:d.id,name:String(d.data().name||"").slice(0,12),color:String(d.data().color||"")}));teams=[...PRESETS,...custom.filter(t=>!presetFor(t.name))];render()},denied);
+  lcol.onSnapshot(s=>{logs=s.docs.map(d=>{const v=d.data();return {name:String(v.name||""),from:String(v.from||""),to:String(v.to||""),at:Number(v.at)||0}});render()},denied);
+  col.onSnapshot(s=>{players=s.docs.map(d=>({id:d.id,...clean(d.data())}));if(!s.metadata.fromCache){$("status").hidden=true;$("importbox").hidden=players.length>0}render()},denied);
+  $("savem").disabled=false;$("save").disabled=!mcp;if(!mcp)$("manual").open=true;
+  render();loadChamps();
+}
+$("gate").onsubmit=ev=>{ev.preventDefault();const v=$("code").value.trim();
+  if(!/^[A-Za-z0-9_-]{12,}$/.test(v)){csay("초대 코드는 영문, 숫자, -, _ 12자 이상이에요.");return}
+  store.set(v);if(store.get()!==v){csay("이 브라우저에서는 코드를 저장할 수 없어요. 일반 창에서 열어주세요.");return}location.reload()};
+$("leave").onclick=()=>{store.set("");location.reload()};
+$("import").onchange=async ev=>{
+  try{
+    const data=JSON.parse(await ev.target.files[0].text());
+    for(const name of ["teams","transfers","players"])for(const [id,v] of Object.entries(data[name]||{}))await db.collection(name).doc(id).set(v);
+    $("importbox").hidden=true;csay("");
+  }catch(e){csay("가져오지 못했어요. data.json 파일과 초대 코드를 확인하세요.")}
+};
+start();
+</script>
+</body>
+</html>
